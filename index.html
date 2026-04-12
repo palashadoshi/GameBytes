@@ -308,13 +308,15 @@
 
   .ttt-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 80px);
+    grid-template-rows: repeat(3, 80px);
     gap: 8px;
-    width: 260px;
+    width: fit-content;
   }
 
   .ttt-cell {
-    aspect-ratio: 1;
+    width: 80px;
+    height: 80px;
     background: #1a1a1a;
     border: 1px solid var(--border);
     border-radius: 10px;
