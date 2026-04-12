@@ -695,9 +695,9 @@
   const canvas = document.getElementById('pongCanvas');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const PAD_W = 12, PAD_H = 80, BALL_R = 8, SPEED = 3.5;
-  const MAX_SPEED = 9, CPU_SPEED = 3.2, CPU_REACTION = 0.75;
-  let lScore, rScore, lY, rY, bx, by, bdx, bdy, keys, animId, running, cpuOn;
+  const PAD_W = 12, PAD_H = 80, BALL_R = 8, SPEED = 1;
+  const MAX_SPEED = 5;
+  let lScore, rScore, lY, rY, rYTarget, bx, by, bdx, bdy, keys, animId, running, cpuOn;
   cpuOn = false;
 
   function toggleCPU() {
@@ -712,7 +712,7 @@
   function startPong() {
     cancelAnimationFrame(animId);
     lScore = 0; rScore = 0;
-    lY = H/2 - PAD_H/2; rY = H/2 - PAD_H/2;
+    lY = H/2 - PAD_H/2; rY = H/2 - PAD_H/2; rYTarget = rY;
     bx = W/2; by = H/2;
     bdx = SPEED * (Math.random() > 0.5 ? 1 : -1);
     bdy = SPEED * (Math.random() > 0.5 ? 1 : -1);
@@ -729,19 +729,18 @@
   document.addEventListener('keyup', e => { keys[e.key] = false; });
 
   function tickCPU() {
-    // CPU controls right paddle — tracks ball with imperfect reaction
-    const target = by - PAD_H / 2 + (Math.random() - 0.5) * 20;
-    const center = rY + PAD_H / 2;
-    // Only react when ball is coming toward CPU side
+    // Update target position — aim for ball center minus half paddle, with a small offset for imperfection
     if (bdx > 0) {
-      if (center < target - 4) rY = Math.min(H - PAD_H, rY + CPU_SPEED);
-      else if (center > target + 4) rY = Math.max(0, rY - CPU_SPEED);
+      // Ball coming toward CPU — track it
+      rYTarget = by - PAD_H / 2 + (Math.sin(bx * 0.05) * 12); // subtle sinusoidal imperfection, no random jitter
     } else {
-      // Drift back to center lazily when ball moving away
-      const mid = H/2 - PAD_H/2;
-      if (rY < mid - 4) rY = Math.min(mid, rY + CPU_SPEED * 0.4);
-      else if (rY > mid + 4) rY = Math.max(mid, rY - CPU_SPEED * 0.4);
+      // Ball going away — drift smoothly back to center
+      rYTarget = H / 2 - PAD_H / 2;
     }
+    // Clamp target to valid range
+    rYTarget = Math.max(0, Math.min(H - PAD_H, rYTarget));
+    // Lerp rY toward target — this is what makes it buttery smooth
+    rY += (rYTarget - rY) * 0.06;
   }
 
   function tickPong() {
