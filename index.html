@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GameBytes</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --card: #161616;
+    --border: #2a2a2a;
+    --accent1: #f0e040;
+    --accent2: #ff4d6d;
+    --accent3: #3df5b0;
+    --accent4: #7b8cff;
+    --text: #f0f0f0;
+    --muted: #888;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── HERO ─── */
+  header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px 60px;
+    text-align: center;
+    position: relative;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, #f0e04018 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .site-title {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 50%, var(--accent3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .site-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 48px;
+  }
+
+  .nav-pills {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-pill {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .nav-pill:hover { color: var(--text); border-color: var(--accent1); }
+  .nav-pill.s1:hover { border-color: var(--accent3); }
+  .nav-pill.s2:hover { border-color: var(--accent2); }
+  .nav-pill.s3:hover { border-color: var(--accent4); }
+
+  /* ─── GAME SECTIONS ─── */
+  main { max-width: 860px; margin: 0 auto; padding: 0 24px 120px; }
+
+  .game-section {
+    margin-bottom: 100px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .game-section:nth-child(1) { animation-delay: 0.05s; }
+  .game-section:nth-child(2) { animation-delay: 0.15s; }
+  .game-section:nth-child(3) { animation-delay: 0.25s; }
+  .game-section:nth-child(4) { animation-delay: 0.35s; }
+
+  .game-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .c1 .game-label { color: var(--accent3); }
+  .c2 .game-label { color: var(--accent1); }
+  .c3 .game-label { color: var(--accent2); }
+  .c4 .game-label { color: var(--accent4); }
+
+  .game-title {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 28px;
+    line-height: 1;
+  }
+
+  .game-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .game-canvas-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: #111;
+  }
+
+  canvas { display: block; border-radius: 8px; }
+
+  .game-ui {
+    padding: 20px 24px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.15s;
+  }
+
+  .btn:active { transform: scale(0.96); }
+
+  .c1 .btn-primary { background: var(--accent3); color: #000; }
+  .c2 .btn-primary { background: var(--accent1); color: #000; }
+  .c3 .btn-primary { background: var(--accent2); color: #fff; }
+  .c4 .btn-primary { background: var(--accent4); color: #fff; }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .btn-secondary:hover { color: var(--text); border-color: #555; }
+
+  .score-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .score-display span { color: var(--text); font-weight: 700; }
+
+  .game-desc {
+    margin-top: 20px;
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.7;
+    font-family: 'Space Mono', monospace;
+    padding: 0 2px;
+  }
+
+  .controls-hint {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: #555;
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── HANGMAN SPECIFIC ─── */
+  .hangman-wrap {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    min-height: 340px;
+  }
+
+  .hangman-art {
+    width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .hangman-art svg { width: 140px; height: 200px; }
+
+  .hangman-right {
+    flex: 1;
+    padding: 28px 24px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .word-display {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .letter-box {
+    width: 32px;
+    height: 40px;
+    border-bottom: 2px solid var(--accent1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+
+  .used-letters {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .used-letters .wrong { color: var(--accent2); }
+
+  #hm-input-row { display: flex; gap: 8px; align-items: center; }
+
+  #hm-input {
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    width: 56px;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    text-align: center;
+    text-transform: lowercase;
+    outline: none;
+  }
+
+  #hm-input:focus { border-color: var(--accent1); }
+
+  #hm-message {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    min-height: 1.2em;
+  }
+
+  #hm-chances {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* ─── TIC TAC TOE ─── */
+  .ttt-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 32px 20px;
+    background: #111;
+  }
+
+  .ttt-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 260px;
+  }
+
+  .ttt-cell {
+    aspect-ratio: 1;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Syne', sans-serif;
+    user-select: none;
+  }
+
+  .ttt-cell:hover:not(.taken) { background: #222; border-color: #444; }
+  .ttt-cell.x { color: var(--accent4); }
+  .ttt-cell.o { color: var(--accent2); }
+  .ttt-cell.winner { background: #1e2a1a; border-color: var(--accent3); }
+
+  #ttt-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: #444;
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 0 0 100px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header>
+  <div class="site-title">GameBytes</div>
+  <div class="site-sub">// four games, one place, zero downloads</div>
+  <nav class="nav-pills">
+    <a href="#snake" class="nav-pill s1">🐍 Snake</a>
+    <a href="#hangman" class="nav-pill s2">🪢 Hangman</a>
+    <a href="#pong" class="nav-pill s3">🏓 Ping Pong</a>
+    <a href="#ttt" class="nav-pill">⭕ Tic Tac Toe</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ═══════════════ SNAKE ═══════════════ -->
+  <section class="game-section c1" id="snake">
+    <div class="game-label">Game 01</div>
+    <div class="game-title">Snake</div>
+    <div class="game-card">
+      <div class="game-canvas-wrap">
+        <canvas id="snakeCanvas" width="720" height="400" style="max-width:100%;"></canvas>
+      </div>
+      <div class="game-ui">
+        <button class="btn btn-primary" onclick="startSnake()">Start / Restart</button>
+        <span class="controls-hint">↑ ↓ ← → to move</span>
+        <div class="score-display">Score: <span id="snakeScore">0</span></div>
+      </div>
+    </div>
+    <p class="game-desc">
+      The classic. Eat the white pellets, grow your tail, don't crash into the walls or yourself.
+      Every bite makes you longer — and your problems bigger.
+    </p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════ HANGMAN ═══════════════ -->
+  <section class="game-section c2" id="hangman">
+    <div class="game-label">Game 02</div>
+    <div class="game-title">Hangman</div>
+    <div class="game-card">
+      <div class="hangman-wrap">
+        <div class="hangman-art">
+          <svg id="hmSvg" viewBox="0 0 140 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Gallows -->
+            <line x1="10" y1="195" x2="130" y2="195" stroke="#444" stroke-width="3" stroke-linecap="round"/>
+            <line x1="30" y1="195" x2="30" y2="10" stroke="#444" stroke-width="3" stroke-linecap="round"/>
+            <line x1="30" y1="10" x2="90" y2="10" stroke="#444" stroke-width="3" stroke-linecap="round"/>
+            <line x1="90" y1="10" x2="90" y2="30" stroke="#444" stroke-width="3" stroke-linecap="round"/>
+            <!-- Body parts, revealed progressively -->
+            <circle id="hm-head" cx="90" cy="45" r="15" stroke="#f0e040" stroke-width="2.5" style="display:none"/>
+            <line id="hm-body" x1="90" y1="60" x2="90" y2="110" stroke="#f0e040" stroke-width="2.5" stroke-linecap="round" style="display:none"/>
+            <line id="hm-larm" x1="90" y1="75" x2="65" y2="95" stroke="#f0e040" stroke-width="2.5" stroke-linecap="round" style="display:none"/>
+            <line id="hm-rarm" x1="90" y1="75" x2="115" y2="95" stroke="#f0e040" stroke-width="2.5" stroke-linecap="round" style="display:none"/>
+            <line id="hm-lleg" x1="90" y1="110" x2="65" y2="140" stroke="#f0e040" stroke-width="2.5" stroke-linecap="round" style="display:none"/>
+            <line id="hm-rleg" x1="90" y1="110" x2="115" y2="140" stroke="#f0e040" stroke-width="2.5" stroke-linecap="round" style="display:none"/>
+          </svg>
+        </div>
+        <div class="hangman-right">
+          <div id="hm-word" class="word-display"></div>
+          <div id="hm-chances" class="chances">Chances left: <span id="hm-chances-num">—</span></div>
+          <div id="hm-used" class="used-letters">Wrong: <span id="hm-wrong-letters">—</span></div>
+          <div id="hm-input-row">
+            <input id="hm-input" maxlength="1" placeholder="a" autocomplete="off"/>
+            <button class="btn btn-primary" onclick="hmGuess()">Guess</button>
+            <button class="btn btn-secondary" onclick="startHangman()">New Word</button>
+          </div>
+          <div id="hm-message"></div>
+        </div>
+      </div>
+    </div>
+    <p class="game-desc">
+      Guess the hidden word one letter at a time before the figure is complete.
+      Too many wrong guesses and it's curtains — figuratively speaking.
+    </p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════ PING PONG ═══════════════ -->
+  <section class="game-section c3" id="pong">
+    <div class="game-label">Game 03</div>
+    <div class="game-title">Ping Pong</div>
+    <div class="game-card">
+      <div class="game-canvas-wrap">
+        <canvas id="pongCanvas" width="720" height="400" style="max-width:100%;"></canvas>
+      </div>
+      <div class="game-ui">
+        <button class="btn btn-primary" onclick="startPong()">Start / Restart</button>
+        <span class="controls-hint">W/S — left paddle &nbsp;|&nbsp; ↑/↓ — right paddle</span>
+      </div>
+    </div>
+    <p class="game-desc">
+      Two-player table tennis on your keyboard. Left player uses W/S, right player uses ↑/↓.
+      First to 7 wins — or just keep rallying forever, we won't judge.
+    </p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════ TIC TAC TOE ═══════════════ -->
+  <section class="game-section c4" id="ttt">
+    <div class="game-label">Game 04</div>
+    <div class="game-title">Tic Tac Toe</div>
+    <div class="game-card">
+      <div class="ttt-wrap" style="flex-direction:column; align-items:center;">
+        <div class="ttt-grid" id="tttGrid"></div>
+        <div id="ttt-status">Press Start to play</div>
+      </div>
+      <div class="game-ui">
+        <button class="btn btn-primary" onclick="startTTT()">Start / Restart</button>
+        <div class="score-display">X: <span id="tttX">0</span> &nbsp;|&nbsp; O: <span id="tttO">0</span></div>
+      </div>
+    </div>
+    <p class="game-desc">
+      The timeless two-player classic. X goes first, then O, take turns until someone lines up three —
+      or you shake hands on a draw. Pass the keyboard to a friend.
+    </p>
+  </section>
+
+</main>
+
+<footer>made by palash doshi &nbsp;·&nbsp; GameBytes</footer>
+
+<script>
+/* ══════════════════════════════════════════
+   SNAKE
+══════════════════════════════════════════ */
+(function() {
+  const canvas = document.getElementById('snakeCanvas');
+  const ctx = canvas.getContext('2d');
+  const GRID = 20;
+  const COLS = canvas.width / GRID;
+  const ROWS = canvas.height / GRID;
+  let snake, dir, nextDir, food, score, interval, running;
+
+  function startSnake() {
+    if (interval) clearInterval(interval);
+    snake = [{x: 5, y: 5}];
+    dir = {x:1, y:0};
+    nextDir = {x:1, y:0};
+    score = 0;
+    running = true;
+    document.getElementById('snakeScore').textContent = 0;
+    placeFood();
+    interval = setInterval(tickSnake, 100);
+  }
+  window.startSnake = startSnake;
+
+  function placeFood() {
+    do {
+      food = {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)};
+    } while (snake.some(s => s.x===food.x && s.y===food.y));
+  }
+
+  function tickSnake() {
+    dir = nextDir;
+    const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS ||
+        snake.some(s => s.x===head.x && s.y===head.y)) {
+      clearInterval(interval);
+      running = false;
+      drawSnake();
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#ff4d6d';
+      ctx.font = 'bold 36px Syne';
+      ctx.textAlign = 'center';
+      ctx.fillText('Game Over', canvas.width/2, canvas.height/2 - 16);
+      ctx.fillStyle = '#888';
+      ctx.font = '16px Space Mono';
+      ctx.fillText('Score: ' + score, canvas.width/2, canvas.height/2 + 18);
+      return;
+    }
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+      score += 10;
+      document.getElementById('snakeScore').textContent = score;
+      placeFood();
+    } else {
+      snake.pop();
+    }
+    drawSnake();
+  }
+
+  function drawSnake() {
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Draw grid dots
+    ctx.fillStyle = '#1a1a1a';
+    for (let x = 0; x < COLS; x++)
+      for (let y = 0; y < ROWS; y++)
+        ctx.fillRect(x*GRID+9, y*GRID+9, 2, 2);
+    // Food
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = '#fff';
+    ctx.shadowBlur = 10;
+    ctx.fillRect(food.x*GRID+2, food.y*GRID+2, GRID-4, GRID-4);
+    ctx.shadowBlur = 0;
+    // Snake
+    snake.forEach((seg, i) => {
+      const t = i / snake.length;
+      ctx.fillStyle = i === 0 ? '#3df5b0' : `hsl(${150 - t*30}, 80%, ${55 - t*15}%)`;
+      ctx.fillRect(seg.x*GRID+1, seg.y*GRID+1, GRID-2, GRID-2);
+    });
+  }
+
+  document.addEventListener('keydown', e => {
+    if (!running) return;
+    const map = {
+      'ArrowUp':    {x:0,y:-1}, 'ArrowDown': {x:0,y:1},
+      'ArrowLeft':  {x:-1,y:0}, 'ArrowRight': {x:1,y:0}
+    };
+    const d = map[e.key];
+    if (d && !(d.x === -dir.x && d.y === -dir.y)) {
+      nextDir = d;
+      e.preventDefault();
+    }
+  });
+
+  // Draw idle state
+  ctx.fillStyle = '#0d0d0d';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#2a2a2a';
+  ctx.font = '14px Space Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('Press Start to play', canvas.width/2, canvas.height/2);
+})();
+
+
+/* ══════════════════════════════════════════
+   HANGMAN
+══════════════════════════════════════════ */
+(function() {
+  const WORDS = [
+    'javascript','python','hangman','keyboard','algorithm','function','variable',
+    'developer','internet','browser','terminal','software','hardware','network',
+    'database','security','protocol','compiler','elephant','adventure','symphony',
+    'philosophy','architect','democracy','evolution','marathon','paragraph',
+    'telescope','hurricane','chocolate','waterfall','satellite','universe',
+    'quantum','rhythm','sphinx','cryptic','journey','mystery','abstract',
+    'fractal','silicon','voltage','circuit','polygon','eclipse','galaxy',
+    'hydrogen','nitrogen','calcium','tsunami','volcano','plateau','canyon',
+    'fossil','amber','coral','whale','falcon','jaguar','panda','koala',
+    'penguin','dolphin','octopus','lobster','sparrow','vulture','python',
+    'cobra','mamba','condor','parrot','iguana','gecko','toucan','meerkat'
+  ];
+  const PARTS = ['hm-head','hm-body','hm-larm','hm-rarm','hm-lleg','hm-rleg'];
+  let word, guessed, wrong, maxWrong;
+
+  function startHangman() {
+    word = WORDS[Math.floor(Math.random()*WORDS.length)];
+    guessed = new Set();
+    wrong = 0;
+    maxWrong = word.length < 10 ? word.length + 2 : word.length + 4;
+    maxWrong = Math.min(maxWrong, 6);
+    PARTS.forEach(id => document.getElementById(id).style.display = 'none');
+    render();
+    document.getElementById('hm-message').textContent = '';
+    document.getElementById('hm-input').disabled = false;
+    document.getElementById('hm-input').value = '';
+    document.getElementById('hm-input').focus();
+  }
+  window.startHangman = startHangman;
+
+  function render() {
+    // Word
+    const wordDiv = document.getElementById('hm-word');
+    wordDiv.innerHTML = word.split('').map(ch =>
+      `<div class="letter-box">${guessed.has(ch) ? ch : ''}</div>`
+    ).join('');
+    // Chances
+    document.getElementById('hm-chances-num').textContent = maxWrong - wrong;
+    // Wrong letters
+    const wrongLetters = [...guessed].filter(c => !word.includes(c));
+    document.getElementById('hm-wrong-letters').innerHTML =
+      wrongLetters.length ? wrongLetters.map(c => `<span class="wrong">${c}</span>`).join(' ') : '—';
+    // Show body parts
+    PARTS.forEach((id, i) => {
+      document.getElementById(id).style.display = i < wrong ? '' : 'none';
+    });
+  }
+
+  function hmGuess() {
+    const input = document.getElementById('hm-input');
+    const letter = input.value.trim().toLowerCase();
+    input.value = '';
+    if (!letter || !/^[a-z]$/.test(letter) || !word) return;
+    if (guessed.has(letter)) {
+      showMsg('Already guessed!', '#888');
+      return;
+    }
+    guessed.add(letter);
+    if (!word.includes(letter)) wrong++;
+    render();
+    const won = word.split('').every(c => guessed.has(c));
+    if (won) {
+      showMsg('🎉 You got it!', '#3df5b0');
+      input.disabled = true;
+    } else if (wrong >= maxWrong) {
+      render();
+      showMsg(`💀 The word was: ${word}`, '#ff4d6d');
+      input.disabled = true;
+    } else {
+      showMsg('', '');
+    }
+    input.focus();
+  }
+  window.hmGuess = hmGuess;
+
+  function showMsg(txt, color) {
+    const el = document.getElementById('hm-message');
+    el.textContent = txt;
+    el.style.color = color;
+  }
+
+  document.getElementById('hm-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') hmGuess();
+  });
+
+  startHangman();
+})();
+
+
+/* ══════════════════════════════════════════
+   PING PONG
+══════════════════════════════════════════ */
+(function() {
+  const canvas = document.getElementById('pongCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD_W = 12, PAD_H = 80, BALL_R = 8, SPEED = 5;
+  let lScore, rScore, lY, rY, bx, by, bdx, bdy, keys, animId, running;
+
+  function startPong() {
+    cancelAnimationFrame(animId);
+    lScore = 0; rScore = 0;
+    lY = H/2 - PAD_H/2; rY = H/2 - PAD_H/2;
+    bx = W/2; by = H/2;
+    bdx = SPEED * (Math.random() > 0.5 ? 1 : -1);
+    bdy = SPEED * (Math.random() > 0.5 ? 1 : -1);
+    keys = {};
+    running = true;
+    animId = requestAnimationFrame(tickPong);
+  }
+  window.startPong = startPong;
+
+  document.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if (['ArrowUp','ArrowDown'].includes(e.key)) e.preventDefault();
+  });
+  document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+  function tickPong() {
+    if (!running) return;
+    // Paddles
+    if (keys['w'] || keys['W']) lY = Math.max(0, lY - 6);
+    if (keys['s'] || keys['S']) lY = Math.min(H - PAD_H, lY + 6);
+    if (keys['ArrowUp']) rY = Math.max(0, rY - 6);
+    if (keys['ArrowDown']) rY = Math.min(H - PAD_H, rY + 6);
+    // Ball
+    bx += bdx; by += bdy;
+    if (by - BALL_R < 0) { by = BALL_R; bdy *= -1; }
+    if (by + BALL_R > H) { by = H - BALL_R; bdy *= -1; }
+    // Left paddle
+    if (bx - BALL_R < PAD_W + 20 && by > lY && by < lY + PAD_H) {
+      bx = PAD_W + 20 + BALL_R;
+      bdx = Math.abs(bdx) * 1.04;
+      bdy += (by - (lY + PAD_H/2)) * 0.1;
+    }
+    // Right paddle
+    if (bx + BALL_R > W - PAD_W - 20 && by > rY && by < rY + PAD_H) {
+      bx = W - PAD_W - 20 - BALL_R;
+      bdx = -Math.abs(bdx) * 1.04;
+      bdy += (by - (rY + PAD_H/2)) * 0.1;
+    }
+    // Scoring
+    if (bx < 0) {
+      rScore++; resetBall(-1);
+    } else if (bx > W) {
+      lScore++; resetBall(1);
+    }
+    // Speed cap
+    const spd = Math.sqrt(bdx*bdx+bdy*bdy);
+    if (spd > 14) { bdx = bdx/spd*14; bdy = bdy/spd*14; }
+    drawPong();
+    animId = requestAnimationFrame(tickPong);
+  }
+
+  function resetBall(dir) {
+    bx = W/2; by = H/2;
+    bdx = SPEED * dir;
+    bdy = SPEED * (Math.random() > 0.5 ? 1 : -1);
+  }
+
+  function drawPong() {
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, W, H);
+    // Center line
+    ctx.setLineDash([8, 12]);
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, H); ctx.stroke();
+    ctx.setLineDash([]);
+    // Scores
+    ctx.fillStyle = '#2a2a2a';
+    ctx.font = 'bold 64px Syne';
+    ctx.textAlign = 'center';
+    ctx.fillText(lScore, W/4, 80);
+    ctx.fillText(rScore, W*3/4, 80);
+    // Paddles
+    ctx.fillStyle = '#ff4d6d';
+    ctx.beginPath();
+    ctx.roundRect(20, lY, PAD_W, PAD_H, 4);
+    ctx.fill();
+    ctx.fillStyle = '#7b8cff';
+    ctx.beginPath();
+    ctx.roundRect(W - 20 - PAD_W, rY, PAD_W, PAD_H, 4);
+    ctx.fill();
+    // Ball
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = '#fff';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(bx, by, BALL_R, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Win check
+    if (lScore >= 7 || rScore >= 7) {
+      running = false;
+      cancelAnimationFrame(animId);
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = lScore >= 7 ? '#ff4d6d' : '#7b8cff';
+      ctx.font = 'bold 40px Syne';
+      ctx.textAlign = 'center';
+      ctx.fillText((lScore >= 7 ? 'Left' : 'Right') + ' Player Wins!', W/2, H/2 - 12);
+      ctx.fillStyle = '#888';
+      ctx.font = '14px Space Mono';
+      ctx.fillText('Press Start to play again', W/2, H/2 + 24);
+    }
+  }
+
+  // Idle
+  ctx.fillStyle = '#0d0d0d';
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#2a2a2a';
+  ctx.font = '14px Space Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('Press Start to play', W/2, H/2);
+})();
+
+
+/* ══════════════════════════════════════════
+   TIC TAC TOE
+══════════════════════════════════════════ */
+(function() {
+  let board, current, gameOver, scoreX = 0, scoreO = 0;
+  const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  function startTTT() {
+    board = Array(9).fill('');
+    current = 'X';
+    gameOver = false;
+    document.getElementById('ttt-status').textContent = "Player X's turn";
+    document.getElementById('ttt-status').style.color = '#7b8cff';
+    renderTTT();
+  }
+  window.startTTT = startTTT;
+
+  function renderTTT() {
+    const grid = document.getElementById('tttGrid');
+    grid.innerHTML = '';
+    board.forEach((cell, i) => {
+      const div = document.createElement('div');
+      div.className = 'ttt-cell' + (cell ? ' taken' : '') + (cell === 'X' ? ' x' : cell === 'O' ? ' o' : '');
+      div.textContent = cell;
+      div.onclick = () => tttMove(i);
+      grid.appendChild(div);
+    });
+  }
+
+  function tttMove(i) {
+    if (gameOver || board[i]) return;
+    board[i] = current;
+    const win = checkWin();
+    if (win) {
+      gameOver = true;
+      if (current === 'X') { scoreX++; document.getElementById('tttX').textContent = scoreX; }
+      else { scoreO++; document.getElementById('tttO').textContent = scoreO; }
+      highlightWin(win);
+      const status = document.getElementById('ttt-status');
+      status.textContent = `Player ${current} wins! 🎉`;
+      status.style.color = current === 'X' ? '#7b8cff' : '#ff4d6d';
+      return;
+    }
+    if (board.every(c => c)) {
+      gameOver = true;
+      document.getElementById('ttt-status').textContent = "It's a draw!";
+      document.getElementById('ttt-status').style.color = '#888';
+      renderTTT();
+      return;
+    }
+    current = current === 'X' ? 'O' : 'X';
+    document.getElementById('ttt-status').textContent = `Player ${current}'s turn`;
+    document.getElementById('ttt-status').style.color = current === 'X' ? '#7b8cff' : '#ff4d6d';
+    renderTTT();
+  }
+
+  function checkWin() {
+    for (const [a,b,c] of WINS) {
+      if (board[a] && board[a] === board[b] && board[b] === board[c]) return [a,b,c];
+    }
+    return null;
+  }
+
+  function highlightWin(cells) {
+    renderTTT();
+    cells.forEach(i => {
+      document.getElementById('tttGrid').children[i].classList.add('winner');
+    });
+  }
+
+  startTTT();
+})();
+</script>
+</body>
+</html>
