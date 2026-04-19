@@ -92,6 +92,7 @@
   .nav-pill.s1:hover { border-color: var(--accent3); }
   .nav-pill.s2:hover { border-color: var(--accent2); }
   .nav-pill.s3:hover { border-color: var(--accent4); }
+  .nav-pill.s4:hover { border-color: #ff9f43; }
 
   /* ─── GAME SECTIONS ─── */
   main { max-width: 860px; margin: 0 auto; padding: 0 24px 120px; }
@@ -123,6 +124,8 @@
   .c2 .game-label { color: var(--accent1); }
   .c3 .game-label { color: var(--accent2); }
   .c4 .game-label { color: var(--accent4); }
+  .c5 .game-label { color: #ff9f43; }
+  .c5 .btn-primary { background: #ff9f43; color: #000; }
 
   .game-title {
     font-size: clamp(2rem, 5vw, 3.2rem);
@@ -335,6 +338,86 @@
     margin-top: 12px;
   }
 
+  /* ─── MATH BLITZ ─── */
+  .mb-wrap {
+    padding: 36px 32px;
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    min-height: 280px;
+    justify-content: center;
+  }
+
+  .mb-idle {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    color: #444;
+    text-align: center;
+  }
+
+  .mb-timer-bar-wrap {
+    width: 100%;
+    height: 6px;
+    background: #222;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .mb-timer-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: #ff9f43;
+    transition: width 0.1s linear, background 0.3s;
+  }
+
+  .mb-question {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 800;
+    color: var(--text);
+    text-align: center;
+    letter-spacing: -1px;
+  }
+
+  .mb-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  #mb-input {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.4rem;
+    width: 120px;
+    padding: 10px 16px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    color: var(--text);
+    text-align: center;
+    outline: none;
+  }
+
+  #mb-input:focus { border-color: #ff9f43; }
+
+  .mb-streak {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .mb-streak span { color: #ff9f43; font-weight: 700; }
+
+  .mb-feedback {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    min-height: 1.2em;
+    text-align: center;
+  }
+
   /* ─── FOOTER ─── */
   footer {
     text-align: center;
@@ -365,6 +448,7 @@
     <a href="#hangman" class="nav-pill s2">🪢 Hangman</a>
     <a href="#pong" class="nav-pill s3">🏓 Ping Pong</a>
     <a href="#ttt" class="nav-pill">⭕ Tic Tac Toe</a>
+    <a href="#mathblitz" class="nav-pill s4">⚡ Math Blitz</a>
   </nav>
 </header>
 
@@ -474,6 +558,38 @@
     <p class="game-desc">
       The timeless two-player classic. X goes first, then O, take turns until someone lines up three —
       or you shake hands on a draw. Pass the keyboard to a friend.
+    </p>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══════════════ MATH BLITZ ═══════════════ -->
+  <section class="game-section c5" id="mathblitz">
+    <div class="game-label">Game 05</div>
+    <div class="game-title">Math Blitz</div>
+    <div class="game-card">
+      <div class="mb-wrap">
+        <div class="mb-timer-bar-wrap" id="mb-bar-wrap" style="display:none;">
+          <div class="mb-timer-bar" id="mb-bar"></div>
+        </div>
+        <div class="mb-question" id="mb-question">
+          <span class="mb-idle">Press Start to begin</span>
+        </div>
+        <div class="mb-input-row" id="mb-input-row" style="display:none;">
+          <input id="mb-input" type="number" placeholder="?" autocomplete="off"/>
+          <button class="btn btn-primary" onclick="mbSubmit()">→</button>
+        </div>
+        <div class="mb-feedback" id="mb-feedback"></div>
+        <div class="mb-streak" id="mb-streak" style="display:none;">Streak: <span id="mb-streak-num">0</span></div>
+      </div>
+      <div class="game-ui">
+        <button class="btn btn-primary" onclick="startMathBlitz()">Start / Restart</button>
+        <div class="score-display">Best streak: <span id="mb-best">0</span></div>
+      </div>
+    </div>
+    <p class="game-desc">
+      Middle-school arithmetic at full speed. You get 5 seconds per question — answer wrong
+      or run out of time and it's over. How long can you keep the streak alive?
     </p>
   </section>
 
@@ -1009,6 +1125,118 @@
   }
 
   startTTT();
+})();
+/* ══════════════════════════════════════════
+   MATH BLITZ
+══════════════════════════════════════════ */
+(function() {
+  const TIME_LIMIT = 5000;
+  let answer, streak, best, timerStart, timerRaf, active;
+  best = 0;
+
+  function generateQuestion() {
+    const ops = ['+', '-', '×', '÷'];
+    const op = ops[Math.floor(Math.random() * ops.length)];
+    let a, b, q;
+    switch (op) {
+      case '+':
+        a = rand(10, 99); b = rand(10, 99);
+        answer = a + b; q = `${a} + ${b}`; break;
+      case '-':
+        a = rand(20, 99); b = rand(10, a);
+        answer = a - b; q = `${a} − ${b}`; break;
+      case '×':
+        a = rand(2, 12); b = rand(2, 12);
+        answer = a * b; q = `${a} × ${b}`; break;
+      case '÷':
+        b = rand(2, 12); answer = rand(2, 12);
+        a = b * answer;
+        q = `${a} ÷ ${b}`; break;
+    }
+    return q;
+  }
+
+  function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function startMathBlitz() {
+    streak = 0;
+    active = true;
+    setFeedback('', '');
+    document.getElementById('mb-streak').style.display = '';
+    document.getElementById('mb-streak-num').textContent = 0;
+    nextQuestion();
+  }
+  window.startMathBlitz = startMathBlitz;
+
+  function nextQuestion() {
+    const q = generateQuestion();
+    document.getElementById('mb-question').textContent = q + ' = ?';
+    document.getElementById('mb-input-row').style.display = 'flex';
+    document.getElementById('mb-bar-wrap').style.display = '';
+    const input = document.getElementById('mb-input');
+    input.value = '';
+    input.disabled = false;
+    input.focus();
+    startTimer();
+  }
+
+  function startTimer() {
+    cancelAnimationFrame(timerRaf);
+    timerStart = performance.now();
+    tickTimer();
+  }
+
+  function tickTimer() {
+    const elapsed = performance.now() - timerStart;
+    const pct = Math.max(0, 1 - elapsed / TIME_LIMIT);
+    const bar = document.getElementById('mb-bar');
+    bar.style.width = (pct * 100) + '%';
+    bar.style.background = pct > 0.4 ? '#ff9f43' : '#ff4d6d';
+    if (elapsed >= TIME_LIMIT) { endGame('⏱ Time\'s up!'); return; }
+    timerRaf = requestAnimationFrame(tickTimer);
+  }
+
+  function mbSubmit() {
+    if (!active) return;
+    const val = parseInt(document.getElementById('mb-input').value, 10);
+    if (isNaN(val)) return;
+    cancelAnimationFrame(timerRaf);
+    if (val === answer) {
+      streak++;
+      if (streak > best) {
+        best = streak;
+        document.getElementById('mb-best').textContent = best;
+      }
+      document.getElementById('mb-streak-num').textContent = streak;
+      setFeedback('✓ Correct!', '#3df5b0');
+      setTimeout(nextQuestion, 400);
+    } else {
+      endGame(`✗ Wrong — answer was ${answer}`);
+    }
+  }
+  window.mbSubmit = mbSubmit;
+
+  function endGame(reason) {
+    active = false;
+    cancelAnimationFrame(timerRaf);
+    document.getElementById('mb-bar').style.width = '0%';
+    document.getElementById('mb-input').disabled = true;
+    document.getElementById('mb-input-row').style.display = 'none';
+    document.getElementById('mb-question').textContent = `Streak: ${streak}`;
+    setFeedback(reason, '#ff4d6d');
+  }
+
+  function setFeedback(txt, color) {
+    const el = document.getElementById('mb-feedback');
+    el.textContent = txt;
+    el.style.color = color;
+  }
+
+  document.getElementById('mb-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') mbSubmit();
+  });
 })();
 </script>
 </body>
