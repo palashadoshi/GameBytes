@@ -310,37 +310,17 @@
   }
 
   .ttt-grid {
-    display: grid;
-    grid-template-columns: 80px 80px 80px;
-    grid-template-rows: 80px 80px 80px;
-    gap: 8px;
+    display: none; /* replaced by canvas */
   }
 
-  .ttt-cell {
-    width: 80px;
-    height: 80px;
-    min-width: 80px;
-    min-height: 80px;
-    max-width: 80px;
-    max-height: 80px;
-    background: #1a1a1a;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.2rem;
-    font-weight: 800;
+  .ttt-cell { display: none; }
+
+  #tttCanvas {
+    display: block;
+    width: 256px;
+    height: 256px;
     cursor: pointer;
-    transition: all 0.15s;
-    font-family: 'Syne', sans-serif;
-    user-select: none;
   }
-
-  .ttt-cell:hover:not(.taken) { background: #222; border-color: #444; }
-  .ttt-cell.x { color: var(--accent4); }
-  .ttt-cell.o { color: var(--accent2); }
-  .ttt-cell.winner { background: #1e2a1a; border-color: var(--accent3); }
 
   #ttt-status {
     font-family: 'Space Mono', monospace;
@@ -374,7 +354,7 @@
 <!-- HERO -->
 <header>
   <div class="site-title">GameBytes</div>
-  <div class="site-sub">// four games, one place, zero downloads \\</div>
+  <div class="site-sub">// four games, one place, zero downloads</div>
   <nav class="nav-pills">
     <a href="#snake" class="nav-pill s1">🐍 Snake</a>
     <a href="#hangman" class="nav-pill s2">🪢 Hangman</a>
@@ -478,7 +458,7 @@
     <div class="game-title">Tic Tac Toe</div>
     <div class="game-card">
       <div class="ttt-wrap">
-        <div class="ttt-grid" id="tttGrid"></div>
+        <canvas id="tttCanvas" width="256" height="256"></canvas>
         <div id="ttt-status">Press Start to play</div>
       </div>
       <div class="game-ui">
@@ -506,20 +486,36 @@
   const GRID = 20;
   const COLS = canvas.width / GRID;
   const ROWS = canvas.height / GRID;
-  let snake, dir, nextDir, food, score, interval, running;
+  let snake, dir, nextDir, food, score, interval, running, waiting;
 
   function startSnake() {
     if (interval) clearInterval(interval);
+    running = false;
+    waiting = true;
+    score = 0;
+    document.getElementById('snakeScore').textContent = 0;
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#1a1a1a';
+    for (let x = 0; x < COLS; x++)
+      for (let y = 0; y < ROWS; y++)
+        ctx.fillRect(x*GRID+9, y*GRID+9, 2, 2);
+    ctx.fillStyle = '#3df5b0';
+    ctx.font = 'bold 24px Syne';
+    ctx.textAlign = 'center';
+    ctx.fillText('Press any arrow key to begin', canvas.width/2, canvas.height/2);
+  }
+  window.startSnake = startSnake;
+
+  function launchSnake() {
+    waiting = false;
     snake = [{x: 5, y: 5}];
     dir = {x:1, y:0};
     nextDir = {x:1, y:0};
-    score = 0;
     running = true;
-    document.getElementById('snakeScore').textContent = 0;
     placeFood();
     interval = setInterval(tickSnake, 100);
   }
-  window.startSnake = startSnake;
 
   function placeFood() {
     do {
@@ -580,25 +576,20 @@
   }
 
   document.addEventListener('keydown', e => {
-    if (!running) return;
     const map = {
       'ArrowUp':    {x:0,y:-1}, 'ArrowDown': {x:0,y:1},
       'ArrowLeft':  {x:-1,y:0}, 'ArrowRight': {x:1,y:0}
     };
     const d = map[e.key];
-    if (d && !(d.x === -dir.x && d.y === -dir.y)) {
-      nextDir = d;
-      e.preventDefault();
-    }
+    if (!d) return;
+    e.preventDefault();
+    if (waiting) { nextDir = d; launchSnake(); return; }
+    if (!running) return;
+    if (!(d.x === -dir.x && d.y === -dir.y)) nextDir = d;
   });
 
   // Draw idle state
-  ctx.fillStyle = '#0d0d0d';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#2a2a2a';
-  ctx.font = '14px Space Mono';
-  ctx.textAlign = 'center';
-  ctx.fillText('Press Start to play', canvas.width/2, canvas.height/2);
+  startSnake();
 })();
 
 
@@ -620,7 +611,18 @@
     'cobra','mamba','condor','parrot','iguana','gecko','toucan','meerkat'
   ];
   const PARTS = ['hm-head','hm-body','hm-larm','hm-rarm','hm-lleg','hm-rleg'];
-  let word, guessed, wrong, maxWrong;
+  let word, guessed, wrong, maxWrong, active;
+
+  function resetHangmanUI() {
+    PARTS.forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('hm-word').innerHTML = '<div style="font-family:Space Mono;font-size:0.8rem;color:#555;">Press New Word to begin</div>';
+    document.getElementById('hm-chances-num').textContent = '—';
+    document.getElementById('hm-wrong-letters').innerHTML = '—';
+    document.getElementById('hm-message').textContent = '';
+    document.getElementById('hm-input').disabled = true;
+    document.getElementById('hm-input').value = '';
+    active = false;
+  }
 
   function startHangman() {
     word = WORDS[Math.floor(Math.random()*WORDS.length)];
@@ -628,6 +630,7 @@
     wrong = 0;
     maxWrong = word.length < 10 ? word.length + 2 : word.length + 4;
     maxWrong = Math.min(maxWrong, 6);
+    active = true;
     PARTS.forEach(id => document.getElementById(id).style.display = 'none');
     render();
     document.getElementById('hm-message').textContent = '';
@@ -658,7 +661,7 @@
     const input = document.getElementById('hm-input');
     const letter = input.value.trim().toLowerCase();
     input.value = '';
-    if (!letter || !/^[a-z]$/.test(letter) || !word) return;
+    if (!active || !letter || !/^[a-z]$/.test(letter) || !word) return;
     if (guessed.has(letter)) {
       showMsg('Already guessed!', '#888');
       return;
@@ -691,7 +694,7 @@
     if (e.key === 'Enter') hmGuess();
   });
 
-  startHangman();
+  resetHangmanUI();
 })();
 
 
@@ -716,22 +719,46 @@
   }
   window.toggleCPU = toggleCPU;
 
+  function drawIdle() {
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0,0,W,H);
+    ctx.setLineDash([8,12]);
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ff4d6d';
+    ctx.beginPath(); ctx.roundRect(20, H/2-PAD_H/2, PAD_W, PAD_H, 4); ctx.fill();
+    ctx.fillStyle = cpuOn ? '#3df5b0' : '#7b8cff';
+    ctx.beginPath(); ctx.roundRect(W-20-PAD_W, H/2-PAD_H/2, PAD_W, PAD_H, 4); ctx.fill();
+    ctx.fillStyle = '#2a2a2a';
+    ctx.font = 'bold 24px Syne';
+    ctx.textAlign = 'center';
+    ctx.fillText('Press W or ↑ to begin', W/2, H/2);
+  }
+
   function startPong() {
     cancelAnimationFrame(animId);
+    running = false;
     lScore = 0; rScore = 0;
     lY = H/2 - PAD_H/2; rY = H/2 - PAD_H/2; rYTarget = rY;
-    bx = W/2; by = H/2;
-    bdx = SPEED * (Math.random() > 0.5 ? 1 : -1);
-    bdy = SPEED * (Math.random() > 0.5 ? 1 : -1);
     keys = {};
+    drawIdle();
+  }
+  window.startPong = startPong;
+
+  function launchPong() {
+    bx = W/2; by = H/2;
+    bdx = 1.75 * (Math.random() > 0.5 ? 1 : -1);
+    bdy = 1.75 * (Math.random() > 0.5 ? 1 : -1);
     running = true;
     animId = requestAnimationFrame(tickPong);
   }
-  window.startPong = startPong;
 
   document.addEventListener('keydown', e => {
     keys[e.key] = true;
     if (['ArrowUp','ArrowDown'].includes(e.key)) e.preventDefault();
+    if (!running && ['w','W','ArrowUp'].includes(e.key)) launchPong();
   });
   document.addEventListener('keyup', e => { keys[e.key] = false; });
 
@@ -850,13 +877,7 @@
     }
   }
 
-  // Idle
-  ctx.fillStyle = '#0d0d0d';
-  ctx.fillRect(0,0,W,H);
-  ctx.fillStyle = '#2a2a2a';
-  ctx.font = '14px Space Mono';
-  ctx.textAlign = 'center';
-  ctx.fillText('Press Start to play', W/2, H/2);
+  startPong();
 })();
 
 
@@ -864,70 +885,106 @@
    TIC TAC TOE
 ══════════════════════════════════════════ */
 (function() {
-  let board, current, gameOver, scoreX = 0, scoreO = 0;
+  const canvas = document.getElementById('tttCanvas');
+  const ctx = canvas.getContext('2d');
+  const SIZE = 256, CELL = SIZE / 3, GAP = 8;
+  let board, current, gameOver, scoreX = 0, scoreO = 0, active;
   const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
   function startTTT() {
     board = Array(9).fill('');
     current = 'X';
     gameOver = false;
-    document.getElementById('ttt-status').textContent = "Player X's turn";
-    document.getElementById('ttt-status').style.color = '#7b8cff';
-    renderTTT();
+    active = false;
+    setStatus('Press Start — then click a square', '#555');
+    drawBoard(null);
   }
   window.startTTT = startTTT;
 
-  function renderTTT() {
-    const grid = document.getElementById('tttGrid');
-    grid.innerHTML = '';
-    board.forEach((cell, i) => {
-      const div = document.createElement('div');
-      div.className = 'ttt-cell' + (cell ? ' taken' : '') + (cell === 'X' ? ' x' : cell === 'O' ? ' o' : '');
-      div.textContent = cell;
-      div.onclick = () => tttMove(i);
-      grid.appendChild(div);
-    });
+  function drawBoard(winCells) {
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    // Cells
+    for (let i = 0; i < 9; i++) {
+      const col = i % 3, row = Math.floor(i / 3);
+      const x = col * CELL + GAP/2, y = row * CELL + GAP/2;
+      const w = CELL - GAP, h = CELL - GAP;
+      // Background
+      const isWinner = winCells && winCells.includes(i);
+      ctx.fillStyle = isWinner ? '#1a2e1a' : '#1a1a1a';
+      roundRect(ctx, x, y, w, h, 10);
+      ctx.fill();
+      // Border
+      ctx.strokeStyle = isWinner ? '#3df5b0' : '#2a2a2a';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, x, y, w, h, 10);
+      ctx.stroke();
+      // Letter
+      if (board[i]) {
+        ctx.fillStyle = board[i] === 'X' ? '#7b8cff' : '#ff4d6d';
+        ctx.font = 'bold 42px Syne, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(board[i], x + w/2, y + h/2);
+      }
+    }
+    ctx.textBaseline = 'alphabetic';
   }
 
-  function tttMove(i) {
-    if (gameOver || board[i]) return;
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  canvas.addEventListener('click', e => {
+    if (gameOver) return;
+    if (!active) { active = true; setStatus("Player X's turn", '#7b8cff'); }
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = SIZE / rect.width, scaleY = SIZE / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top) * scaleY;
+    const col = Math.floor(cx / CELL), row = Math.floor(cy / CELL);
+    const i = row * 3 + col;
+    if (board[i]) return;
     board[i] = current;
     const win = checkWin();
     if (win) {
       gameOver = true;
       if (current === 'X') { scoreX++; document.getElementById('tttX').textContent = scoreX; }
       else { scoreO++; document.getElementById('tttO').textContent = scoreO; }
-      highlightWin(win);
-      const status = document.getElementById('ttt-status');
-      status.textContent = `Player ${current} wins! 🎉`;
-      status.style.color = current === 'X' ? '#7b8cff' : '#ff4d6d';
+      drawBoard(win);
+      setStatus(`Player ${current} wins! 🎉`, current === 'X' ? '#7b8cff' : '#ff4d6d');
       return;
     }
     if (board.every(c => c)) {
       gameOver = true;
-      document.getElementById('ttt-status').textContent = "It's a draw!";
-      document.getElementById('ttt-status').style.color = '#888';
-      renderTTT();
+      drawBoard(null);
+      setStatus("It's a draw!", '#888');
       return;
     }
     current = current === 'X' ? 'O' : 'X';
-    document.getElementById('ttt-status').textContent = `Player ${current}'s turn`;
-    document.getElementById('ttt-status').style.color = current === 'X' ? '#7b8cff' : '#ff4d6d';
-    renderTTT();
-  }
+    setStatus(`Player ${current}'s turn`, current === 'X' ? '#7b8cff' : '#ff4d6d');
+    drawBoard(null);
+  });
 
   function checkWin() {
-    for (const [a,b,c] of WINS) {
+    for (const [a,b,c] of WINS)
       if (board[a] && board[a] === board[b] && board[b] === board[c]) return [a,b,c];
-    }
     return null;
   }
 
-  function highlightWin(cells) {
-    renderTTT();
-    cells.forEach(i => {
-      document.getElementById('tttGrid').children[i].classList.add('winner');
-    });
+  function setStatus(txt, color) {
+    const el = document.getElementById('ttt-status');
+    el.textContent = txt;
+    el.style.color = color;
   }
 
   startTTT();
