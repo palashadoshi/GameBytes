@@ -319,7 +319,12 @@
     display: block;
     width: 256px;
     height: 256px;
+    min-width: 256px;
+    min-height: 256px;
+    max-width: 256px;
+    max-height: 256px;
     cursor: pointer;
+    flex-shrink: 0;
   }
 
   #ttt-status {
@@ -705,8 +710,8 @@
   const canvas = document.getElementById('pongCanvas');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const PAD_W = 12, PAD_H = 80, BALL_R = 8, SPEED = 1;
-  const MAX_SPEED = 5;
+  const PAD_W = 12, PAD_H = 80, BALL_R = 8, SPEED = 1.75;
+  const MAX_SPEED = 6.25;
   let lScore, rScore, lY, rY, rYTarget, bx, by, bdx, bdy, keys, animId, running, cpuOn;
   cpuOn = false;
 
@@ -903,34 +908,50 @@
 
   function drawBoard(winCells) {
     ctx.clearRect(0, 0, SIZE, SIZE);
-    // Cells
     for (let i = 0; i < 9; i++) {
       const col = i % 3, row = Math.floor(i / 3);
-      const x = col * CELL + GAP/2, y = row * CELL + GAP/2;
-      const w = CELL - GAP, h = CELL - GAP;
-      // Background
+      const x = col * CELL + GAP / 2;
+      const y = row * CELL + GAP / 2;
+      const w = CELL - GAP;
+      const h = CELL - GAP;
       const isWinner = winCells && winCells.includes(i);
+
+      // Cell background
       ctx.fillStyle = isWinner ? '#1a2e1a' : '#1a1a1a';
-      roundRect(ctx, x, y, w, h, 10);
+      roundRect(x, y, w, h, 10);
       ctx.fill();
-      // Border
+
+      // Cell border
       ctx.strokeStyle = isWinner ? '#3df5b0' : '#2a2a2a';
       ctx.lineWidth = 1.5;
-      roundRect(ctx, x, y, w, h, 10);
+      roundRect(x, y, w, h, 10);
       ctx.stroke();
-      // Letter
-      if (board[i]) {
-        ctx.fillStyle = board[i] === 'X' ? '#7b8cff' : '#ff4d6d';
-        ctx.font = 'bold 42px Syne, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(board[i], x + w/2, y + h/2);
+
+      // Letter — drawn as two diagonal lines for X, circle for O
+      if (board[i] === 'X') {
+        const pad = 18;
+        ctx.strokeStyle = '#7b8cff';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x + pad, y + pad);
+        ctx.lineTo(x + w - pad, y + h - pad);
+        ctx.moveTo(x + w - pad, y + pad);
+        ctx.lineTo(x + pad, y + h - pad);
+        ctx.stroke();
+      } else if (board[i] === 'O') {
+        const cx = x + w / 2, cy = y + h / 2, r = w / 2 - 16;
+        ctx.strokeStyle = '#ff4d6d';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
       }
     }
-    ctx.textBaseline = 'alphabetic';
   }
 
-  function roundRect(ctx, x, y, w, h, r) {
+  function roundRect(x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
@@ -953,7 +974,7 @@
     const cy = (e.clientY - rect.top) * scaleY;
     const col = Math.floor(cx / CELL), row = Math.floor(cy / CELL);
     const i = row * 3 + col;
-    if (board[i]) return;
+    if (i < 0 || i > 8 || board[i]) return;
     board[i] = current;
     const win = checkWin();
     if (win) {
